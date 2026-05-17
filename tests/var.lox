@@ -1,0 +1,6 @@
+var foo = 1;
+print foo;
+foo = 2;
+print foo;
+foo = "bar";
+print foo;

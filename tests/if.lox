@@ -1,0 +1,28 @@
+// Tests if statements and program flow
+
+print "foo";
+print "bar";
+
+if(2 == 3)
+{
+	print "cuff";
+	print "buf";
+}
+else if(3 != 4)
+{
+	print "else";
+	print "else1";
+	if(5 != 6)
+	{
+		print "els2";
+		print "els3";
+	}		
+	print "finally2";
+}
+print "finally1";
+
+{
+	print "finally";
+}
+
+

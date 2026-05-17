@@ -1,0 +1,24 @@
+// Test solely for the tokenizer
+fun alpha(var_one, var_two)
+{
+	var a = ((5.145 + var_one) * var_two) / 2;
+	print a;
+	return a;
+}
+
+var ret = alpha(8.23, 3.14);
+
+while(ret)
+{
+	if(ret > 10)
+	{
+		print ret + alpha(ret);
+	}
+
+	ret = ret - 1;
+}
+
+for(var ret = 0; ret < 10; ret = ret + 1)
+{
+	print ret;
+}
