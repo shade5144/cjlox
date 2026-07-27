@@ -40,28 +40,19 @@ void printASTPre(Expression *root, int nest_level, Arena *scratch,
     printf(".");
   }
 
-  size_t trim_ind;
-
   if (root->left == NULL) {
     printf("lit: ");
-    char *ret = formatObject(root->literal, scratch, &trim_ind);
-    ret[trim_ind] = '\0';
 
-    printf("%s\n", ret);
-    arenaFreeAll(scratch);
+    formatObject(root->literal);
+    printf("\n");
+
   } else if (root->right == NULL) {
-    char *ret = formatTokenType(root->op, scratch, &trim_ind, token_names);
-    ret[trim_ind] = '\0';
-
-    printf("%s\n", ret);
-    arenaFreeAll(scratch);
+    formatTokenType(root->op, token_names);
+    printf("\n");
     printASTPre(root->left, nest_level + 1, scratch, token_names);
   } else {
-    char *ret = formatTokenType(root->op, scratch, &trim_ind, token_names);
-    ret[trim_ind] = '\0';
-
-    printf("%s\n", ret);
-    arenaFreeAll(scratch);
+    formatTokenType(root->op, token_names);
+    printf("\n");
     printASTPre(root->left, nest_level + 1, scratch, token_names);
     printASTPre(root->right, nest_level + 1, scratch, token_names);
   }

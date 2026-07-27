@@ -16,6 +16,6 @@ Token_Type binarySearchKeyword(char *string, char *keywords[NUM_KEYWORDS]);
 int tokenizeText(cstr *line, Token_Vector *tok_list, Arena *scratch_arena,
                  Arena *token_arena);
 
-void printTokList(Token_Vector *tok_list, Arena *scratch);
+void printTokList(Token_Vector *tok_list);
 
 #endif

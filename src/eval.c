@@ -61,13 +61,8 @@ Statement *evalStatement(Statement *stmt) {
       print_obj = entry->val;
     }
 
-    size_t trim_ind;
-    char *print_string = formatObject(print_obj, g_scratch_arena, &trim_ind);
-    print_string[trim_ind] = '\0';
-
-    printf("%s\n", print_string);
-    arenaFreeAll(g_scratch_arena);
-
+    formatObject(print_obj);
+    printf("\n");
     break;
   }
   case STMT_BLOCK: {

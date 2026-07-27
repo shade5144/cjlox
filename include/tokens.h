@@ -66,7 +66,6 @@ typedef struct {
   int capacity;
 } Token_Vector;
 
-char *formatTokenType(Token_Type type, Arena *scratch, size_t *ret_bytes,
-                      char *token_names[40]);
+void formatTokenType(Token_Type type, char *token_names[40]);
 
 #endif

@@ -18,5 +18,5 @@ typedef struct {
   int size;
 } Object;
 
-char *formatObject(Object *obj, Arena *scratch, size_t *ret_bytes);
+void formatObject(Object *obj); 
 #endif

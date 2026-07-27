@@ -158,17 +158,13 @@ void printHashtable(Hash_Table *hashtable) {
       if (hashtable->hash_arr[i].key.literal.data == NULL) {
         printf("(NULL)\n");
       } else {
-        size_t trim_ind;
-        char *fmt_str = formatObject(hashtable->hash_arr[i].val,
-                                     g_scratch_arena, &trim_ind);
-        fmt_str[trim_ind] = '\0';
         // Need to add a formatObject here
-        printf("(%s %ld %016lx-> %s)\n",
+        printf("(%s %ld %016lx-> ",
                hashtable->hash_arr[i].key.literal.data,
                hashtable->hash_arr[i].key.literal.length,
-               hashtable->hash_arr[i].key.hash, fmt_str);
-
-        arenaFreeAll(g_scratch_arena);
+               hashtable->hash_arr[i].key.hash);
+        formatObject(hashtable->hash_arr[i].val);
+        printf(")\n");
       }
     }
   } else {

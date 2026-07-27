@@ -10,22 +10,30 @@
 #include <stdlib.h>
 #include <string.h>
 
-// CLI and linking everything goes here
+/* CLI and linking everything goes here */
 
-// TODO:
-// - Variable scopes
-// - Right now, environments grow if size == capacity(by 2 times) and shrink if
-// size == [capacity / 2](gets halved). Only
-//   upon shrinking are the allocated backing arrays for hashtables freed. This
-//   behaviour has to be tested appropriately.
-// - Shrinking of the environment's tables could be fairly aggressive,
-// considering that deeply nested scopes are an
-//   improbability and considered bad practice anyways
-// - Add +=, -=, *= and /=
-// - Alternate environment implementation
-// - Functions
-// - Garbage Collection?
-// - Make a testing framework and test all cases, especially for errors
+/*
+TODO:
+- Go through instances of formatObject usage and remove the scratch arena references. Since it is purely for debugging
+  we can simply use a static character buffer.
+- Seg fault on identifiers not found
+- Interpreter doesn't catch declaration errors(var foo=1; is the same as foo=1;). Should through an undeclared variable 
+  error as this is an assignment.
+- Figure out why tokenization gets weirded out for identifier; Seems like UB
+- Variable scopes
+- Right now, environments grow if size == capacity(by 2 times) and shrink if
+size == [capacity / 2](gets halved). Only
+  upon shrinking are the allocated backing arrays for hashtables freed. This
+  behaviour has to be tested appropriately.
+- Shrinking of the environment's tables could be fairly aggressive,
+considering that deeply nested scopes are an
+  improbability and considered bad practice anyways
+- Add +=, -=, *= and /=
+- Alternate environment implementation
+- Functions
+- Garbage Collection?
+- Make a testing framework and test all cases, especially for errors
+*/
 
 Arena *g_exp_arena;
 Arena *g_obj_arena;
@@ -123,23 +131,25 @@ int main(int argc, char **argv) {
     int lines = 0;
     int length = 0;
 
-    while (repl) {
       if (!lines) {
         printf("\033[1;34m>>> \033[0m");
       } else {
         printf("\033[1;33m... \033[0m");
       }
 
-      if (!fgets(src, 4096, stdin)) {
+      if (!fgets(src, 4096, stdin)) 
+      {
         printf("\033[1;31mREPL Error: Bad Input\n");
         return 0;
       }
 
-      if (src[0] == '\n') {
+      if(src[0] == '\n')
+      {
         break;
       }
 
-      if ((src - reset) >= 4095) {
+      if((src - reset) >= 4095)
+      {
         printf("\033[1;31mREPL Error: Input Length Exceeded\n");
         return 0;
       }
@@ -147,67 +157,71 @@ int main(int argc, char **argv) {
       length += strlen(src);
       src += (long)(strlen(src));
       lines++;
-    }
 
-    test.length = length - 1;
-    reset[length - 1] = '\0';
-    printf("%s\n", reset);
+      test.length = length - 1;
+      reset[length - 1] = '\0';
+      printf("%s\n", reset);
+        
+      if(!tokenizeText(&test, &token_list, &scratch_arena, &token_arena))
+      {
+          src = reset;
+          token_list.length = 0;
 
-    if (!tokenizeText(&test, &token_list, &scratch_arena, &token_arena)) {
+          arenaFreeAll(&token_arena);
+          arenaFreeAll(&scratch_arena);
+          continue;
+      }
+
+      if(repl && token_list.tokens[0]->tok_type == TOK_QUIT)        
+      {
+          printf("Quitting REPL...\n");
+          return 0;
+      }
+
+      printTokList(&token_list);
+
+      if(argc != 1) 
+      {
+          free(src);
+      }
+
+      Parser parser;
+
+      parser.tok_list = &token_list;
+      parser.index = 0;
+
+      Arena exp_arena;
+      g_exp_arena = &exp_arena;
+      arenaInit(g_exp_arena, 8);
+
+      Arena obj_arena;
+      g_obj_arena = &obj_arena;
+      arenaInit(g_obj_arena, 8);
+
+      Arena stmt_arena;
+      g_stmt_arena = &stmt_arena;
+      arenaInit(g_stmt_arena, 8); 
+
+      Statement *root = stmt(&parser);
+
+      while(stmt(&parser) != NULL)
+          ; // Do Nothing
+      // printExpArena();
+
+      while(root != NULL)
+      {
+          // printAST(root, &scratch_arena);
+          root = evalStatement(root);
+      }
+
       src = reset;
-      token_list.length = 0;
 
+      token_list.length = 0;
       arenaFreeAll(&token_arena);
       arenaFreeAll(&scratch_arena);
-      continue;
-    }
+      arenaFreeAll(g_exp_arena);
+      arenaFreeAll(g_stmt_arena);
 
-    if (repl && token_list.tokens[0]->tok_type == TOK_QUIT) {
-      printf("Quitting REPL...\n");
-      return 0;
-    }
+    } while(repl);
 
-    printTokList(&token_list, &scratch_arena);
-
-    if (argc != 1) {
-      free(src);
-    }
-
-    Parser parser;
-
-    parser.tok_list = &token_list;
-    parser.index = 0;
-
-    Arena exp_arena;
-    g_exp_arena = &exp_arena;
-    arenaInit(g_exp_arena, 8);
-
-    Arena obj_arena;
-    g_obj_arena = &obj_arena;
-    arenaInit(g_obj_arena, 8);
-
-    Arena stmt_arena;
-    g_stmt_arena = &stmt_arena;
-    arenaInit(g_stmt_arena, 8);
-
-    Statement *root = stmt(&parser);
-
-    while (stmt(&parser) != NULL)
-      ; // Do Nothing
-    // printExpArena();
-
-    while (root != NULL) {
-      // printAST(root, &scratch_arena);
-      root = evalStatement(root);
-    }
-
-    src = reset;
-
-    token_list.length = 0;
-    arenaFreeAll(&token_arena);
-    arenaFreeAll(&scratch_arena);
-    arenaFreeAll(g_exp_arena);
-    arenaFreeAll(g_stmt_arena);
-
-  } while (repl);
 }

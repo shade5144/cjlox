@@ -436,8 +436,8 @@ int tokenizeText(cstr *text, Token_Vector *tok_list, Arena *scratch_arena,
   return 1;
 }
 
-void printTokList(Token_Vector *tok_list, Arena *scratch) {
-  char *token_names[41] = {"TOK_AND",
+void printTokList(Token_Vector *tok_list) {
+  static char *token_names[41] = {"TOK_AND",
                            "TOK_CLASS",
                            "TOK_ELSE",
                            "TOK_FALSE",
@@ -480,21 +480,15 @@ void printTokList(Token_Vector *tok_list, Arena *scratch) {
                            "INVALID_TOKEN"};
 
   Token *buf;
-  size_t trim_ind;
-
-  char *string_buf;
 
   for (int i = 0; i < tok_list->length; i++) {
     buf = tok_list->tokens[i];
 
     printf("%d | ", i);
     if (buf->tok_type != TOK_EOF) {
-      string_buf =
-          formatTokenType(buf->tok_type, scratch, &trim_ind, token_names);
-      string_buf[trim_ind] = '\0';
-      printf("Token String: %s Token Type: %s at %d:%d\n", buf->tok_string.data,
-             string_buf, buf->line, buf->index);
-      arenaFreeAll(scratch);
+      printf("Token String: %s Token Type: ", buf->tok_string.data);
+      formatTokenType(buf->tok_type, token_names);
+      printf("at %d:%d\n", buf->line, buf->index);
     } else {
       printf("Token String: EOF Token Type: TOK_EOF at %d:%d\n", buf->line,
              buf->index);
