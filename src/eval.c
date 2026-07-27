@@ -43,13 +43,21 @@ Statement *evalStatement(Statement *stmt) {
     Expression *to_eval = (Expression *)stmt->params;
 
     // Only pertinent for assignment statements and similar
-    evalExpression(to_eval);
+    if (!evalExpression(to_eval)) {
+      return NULL;
+    }
+
     break;
   }
   case STMT_PRINT: {
     printf("Printing expression..\n");
     Expression *to_print = (Expression *)stmt->params;
     Object *print_obj = evalExpression(to_print);
+
+    if (!print_obj) {
+      formatError("Invalid expression for print statement", to_print->line, to_print->index);
+      return NULL;
+    }
 
     if (print_obj->type == OBJ_IDENTIFIER) {
       cstr query_buf;
@@ -489,6 +497,9 @@ Object *evalPlus(Object *left, Object *right) {
 
       return left;
     }
+    case OBJ_IDENTIFIER: {
+      break;
+    }
     default: // Should handle nil here. For now booleans too
     {
       formatError("Addition not supported for nil type", g_cur_node->line,
@@ -628,9 +639,9 @@ Object *evalAssignment(cstr *id, Object *right) {
   Hash_Entry *entry = (Hash_Entry *)lookupFromTable(
       &(g_environment->tables[g_environment->cur_scope]), id);
 
-  if (!entry) {
-    char buf[64];
-    sprintf(buf, "Variable %s not defined in current scope", id->data);
+  if (!entry->key.literal.data) {
+    char buf[128];
+    sprintf(buf, "Variable %s in LHS of expression not defined in current scope", id->data);
     formatError(buf, g_cur_node->line, g_cur_node->index);
     return NULL;
   }
@@ -642,6 +653,24 @@ Object *evalAssignment(cstr *id, Object *right) {
 
 Object *evalExpression(Expression *exp) {
   if (exp->type == EXP_LITERAL) {
+    if (exp->literal->type == OBJ_IDENTIFIER) {
+
+      cstr r_val;
+      r_val.data = (char *)exp->literal->data;
+      r_val.length = exp->literal->size;
+
+      Hash_Entry *entry = (Hash_Entry *)lookupFromTable(
+          &(g_environment->tables[g_environment->cur_scope]), &r_val);
+
+      if (!entry->key.literal.data) {
+        char buf[128];
+        sprintf(buf, "Variable '%s' in RHS of expression not defined in current scope", (char *)exp->literal->data);
+        formatError(buf, g_cur_node->line, g_cur_node->index);
+        return NULL;
+      }
+
+      return entry->val;
+    }
     return exp->literal;
   }
 

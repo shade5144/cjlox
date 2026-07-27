@@ -14,9 +14,9 @@
 
 /*
 TODO:
-- Seg fault on identifiers not found
-- Interpreter doesn't catch declaration errors(var foo=1; is the same as foo=1;). Should through an undeclared variable 
-  error as this is an assignment.
+- During tokenization, comments aren't counted for lines. Is this fine?
+- Refactor: A tech debt seems to be the lack of separation between persistent data and intermediate tokens/parsing 
+  artifacts. This will need a full lookthrough and refactor
 - Figure out why tokenization gets weirded out for identifier; Seems like UB
 - Variable scopes
 - Right now, environments grow if size == capacity(by 2 times) and shrink if
@@ -31,6 +31,7 @@ considering that deeply nested scopes are an
 - Functions
 - Garbage Collection?
 - Make a testing framework and test all cases, especially for errors
+- Parsing errors should hard stop execution. Static analysis isn't an option for a tree-walk interpreter probably
 */
 
 Arena *g_exp_arena;
@@ -129,6 +130,7 @@ int main(int argc, char **argv) {
     int lines = 0;
     int length = 0;
 
+    if(repl) {
       if (!lines) {
         printf("\033[1;34m>>> \033[0m");
       } else {
@@ -151,7 +153,7 @@ int main(int argc, char **argv) {
         printf("\033[1;31mREPL Error: Input Length Exceeded\n");
         return 0;
       }
-
+    
       length += strlen(src);
       src += (long)(strlen(src));
       lines++;
@@ -159,66 +161,71 @@ int main(int argc, char **argv) {
       test.length = length - 1;
       reset[length - 1] = '\0';
       printf("%s\n", reset);
-        
-      if(!tokenizeText(&test, &token_list, &scratch_arena, &token_arena))
-      {
-          src = reset;
-          token_list.length = 0;
+    }
 
-          arenaFreeAll(&token_arena);
-          arenaFreeAll(&scratch_arena);
-          continue;
-      }
+    if(!tokenizeText(&test, &token_list, &scratch_arena, &token_arena))
+    {
+        src = reset;
+        token_list.length = 0;
 
-      if(repl && token_list.tokens[0]->tok_type == TOK_QUIT)        
-      {
-          printf("Quitting REPL...\n");
-          return 0;
-      }
+        arenaFreeAll(&token_arena);
+        arenaFreeAll(&scratch_arena);
+        continue;
+    }
 
-      printTokList(&token_list);
+    if(repl && token_list.tokens[0]->tok_type == TOK_QUIT)        
+    {
+        printf("Quitting REPL...\n");
+        return 0;
+    }
 
-      if(argc != 1) 
-      {
-          free(src);
-      }
+    printTokList(&token_list);
 
-      Parser parser;
+    if(argc != 1) 
+    {
+        free(src);
+    }
 
-      parser.tok_list = &token_list;
-      parser.index = 0;
+    Parser parser;
 
-      Arena exp_arena;
-      g_exp_arena = &exp_arena;
-      arenaInit(g_exp_arena, 8);
+    parser.tok_list = &token_list;
+    parser.index = 0;
 
-      Arena obj_arena;
-      g_obj_arena = &obj_arena;
-      arenaInit(g_obj_arena, 8);
+    Arena exp_arena;
+    g_exp_arena = &exp_arena;
+    arenaInit(g_exp_arena, 8);
 
-      Arena stmt_arena;
-      g_stmt_arena = &stmt_arena;
-      arenaInit(g_stmt_arena, 8); 
+    Arena obj_arena;
+    g_obj_arena = &obj_arena;
+    arenaInit(g_obj_arena, 8);
 
-      Statement *root = stmt(&parser);
+    Arena stmt_arena;
+    g_stmt_arena = &stmt_arena;
+    arenaInit(g_stmt_arena, 8); 
 
-      while(stmt(&parser) != NULL)
-          ; // Do Nothing
-      // printExpArena();
+    Statement *root = stmt(&parser);
 
-      while(root != NULL)
-      {
-          // printAST(root, &scratch_arena);
-          root = evalStatement(root);
-      }
+    /* Parse statements into an AST */
+    while(stmt(&parser) != NULL)
+      ;
 
-      src = reset;
+    while(root != NULL)
+    {
+        root = evalStatement(root);
+    }
 
-      token_list.length = 0;
+    src = reset;
+
+    token_list.length = 0;
+
+    /* This preserves variable state for REPL */
+    if (!repl)
+    {
       arenaFreeAll(&token_arena);
       arenaFreeAll(&scratch_arena);
       arenaFreeAll(g_exp_arena);
       arenaFreeAll(g_stmt_arena);
+    }
 
     } while(repl);
 
