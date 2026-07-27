@@ -58,6 +58,15 @@ Statement *evalStatement(Statement *stmt) {
 
       Hash_Entry *entry = (Hash_Entry *)lookupFromTable(
           &(g_environment->tables[g_environment->cur_scope]), &query_buf);
+     
+      if (!entry->key.literal.data) {
+        char buf[128];
+        sprintf(buf, "The specified identifier \'%s\' was not found", query_buf.data);
+        formatError(buf, to_print->line, to_print->index);
+
+        return NULL;
+      }
+
       print_obj = entry->val;
     }
 

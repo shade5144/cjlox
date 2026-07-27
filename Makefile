@@ -15,4 +15,3 @@ $(OBJ_FILES): %.o: src/%.c
 clean:
 	rm -f build/*
 	rm -f main
-	rm -f debug

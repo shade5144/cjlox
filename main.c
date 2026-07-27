@@ -14,8 +14,6 @@
 
 /*
 TODO:
-- Go through instances of formatObject usage and remove the scratch arena references. Since it is purely for debugging
-  we can simply use a static character buffer.
 - Seg fault on identifiers not found
 - Interpreter doesn't catch declaration errors(var foo=1; is the same as foo=1;). Should through an undeclared variable 
   error as this is an assignment.

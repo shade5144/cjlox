@@ -488,7 +488,7 @@ void printTokList(Token_Vector *tok_list) {
     if (buf->tok_type != TOK_EOF) {
       printf("Token String: %s Token Type: ", buf->tok_string.data);
       formatTokenType(buf->tok_type, token_names);
-      printf("at %d:%d\n", buf->line, buf->index);
+      printf(" at %d:%d\n", buf->line, buf->index);
     } else {
       printf("Token String: EOF Token Type: TOK_EOF at %d:%d\n", buf->line,
              buf->index);

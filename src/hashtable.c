@@ -127,6 +127,7 @@ void *lookupFromTable(Hash_Table *hashtable, cstr *buf) {
     while (1) {
       if ((hashtable->hash_arr[index].key.literal.data == NULL) ||
           buf->data == hashtable->hash_arr[index].key.literal.data) {
+        /* We don't return NULL here in the failure case, so the key.literal.data has to be checked against NULL */
         return &hashtable->hash_arr[index];
       }
 
