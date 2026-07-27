@@ -223,3 +223,16 @@ int addObjectInScope(Environment *evmt, cstr *id, Object *obj) {
 
   return insertIntoTable(cur_table, id, obj);
 }
+
+void *lookupHierarchical(Environment *evmt, cstr *buf) {
+  Hash_Entry *entry = NULL;  
+  int cur_scope = evmt->cur_scope;
+
+  do {
+    entry = (Hash_Entry *)lookupFromTable(
+        &(evmt->tables[cur_scope]), buf);
+    cur_scope--;
+  } while(cur_scope >= 0 && !(entry->key.literal.data));
+  
+  return entry;
+}

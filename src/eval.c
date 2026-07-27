@@ -9,16 +9,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// TODO:
-// - Implement logical operands for OBJ_STRING
-// - Have to compare right operand with 0 for division to catch division by zero
-// errors. But double comparison needs
-//   to be done better
+/*
+TODO:
+- Implement logical operands for OBJ_STRING
+- Have to compare right operand with 0 for division to catch division by zero errors. But double comparison needs
+
+    to be done better
+*/
 
 extern Arena *g_scratch_arena;
 extern Environment *g_environment;
 
-static Expression *g_cur_node;
+static Expression *g_cur_node = NULL;
 static Statement *g_stmt_prev = NULL;
 
 bool getNumberOrBoolean(Object *obj, double *ret) {
@@ -64,8 +66,7 @@ Statement *evalStatement(Statement *stmt) {
       query_buf.data = (char *)print_obj->data;
       query_buf.length = print_obj->size;
 
-      Hash_Entry *entry = (Hash_Entry *)lookupFromTable(
-          &(g_environment->tables[g_environment->cur_scope]), &query_buf);
+      Hash_Entry *entry = (Hash_Entry *)lookupHierarchical(g_environment, &query_buf);
      
       if (!entry->key.literal.data) {
         char buf[128];
@@ -105,6 +106,12 @@ Statement *evalStatement(Statement *stmt) {
     If_Statement *if_stmt = (If_Statement *)(stmt->params);
 
     Object *cond_expr_ret = evalExpression(if_stmt->cond);
+    
+    if (!cond_expr_ret) {
+      formatError("Invalid expression for if condition", if_stmt->cond->line, if_stmt->cond->index);
+      return NULL;
+    }
+
     int is_cond = 0;
 
     switch (cond_expr_ret->type) {
@@ -636,8 +643,7 @@ Object *evalDivide(Object *left, Object *right) {
 }
 
 Object *evalAssignment(cstr *id, Object *right) {
-  Hash_Entry *entry = (Hash_Entry *)lookupFromTable(
-      &(g_environment->tables[g_environment->cur_scope]), id);
+  Hash_Entry *entry = (Hash_Entry *)lookupHierarchical(g_environment, id);
 
   if (!entry->key.literal.data) {
     char buf[128];
@@ -652,6 +658,10 @@ Object *evalAssignment(cstr *id, Object *right) {
 }
 
 Object *evalExpression(Expression *exp) {
+  if (g_cur_node == NULL) {
+    g_cur_node = exp;
+  }  
+
   if (exp->type == EXP_LITERAL) {
     if (exp->literal->type == OBJ_IDENTIFIER) {
 
@@ -659,12 +669,13 @@ Object *evalExpression(Expression *exp) {
       r_val.data = (char *)exp->literal->data;
       r_val.length = exp->literal->size;
 
-      Hash_Entry *entry = (Hash_Entry *)lookupFromTable(
-          &(g_environment->tables[g_environment->cur_scope]), &r_val);
+      Hash_Entry *entry = (Hash_Entry *)lookupHierarchical(g_environment, &r_val);
 
       if (!entry->key.literal.data) {
         char buf[128];
         sprintf(buf, "Variable '%s' in RHS of expression not defined in current scope", (char *)exp->literal->data);
+
+        /* FIXME: This doesn't print the correct line number(at least for if expressions)*/
         formatError(buf, g_cur_node->line, g_cur_node->index);
         return NULL;
       }

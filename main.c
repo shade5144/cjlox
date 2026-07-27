@@ -14,11 +14,12 @@
 
 /*
 TODO:
+- Variable scopes: Should implement hierarchical name resolution
 - During tokenization, comments aren't counted for lines. Is this fine?
 - Refactor: A tech debt seems to be the lack of separation between persistent data and intermediate tokens/parsing 
   artifacts. This will need a full lookthrough and refactor
-- Figure out why tokenization gets weirded out for identifier; Seems like UB
-- Variable scopes
+- Check out the lines and character index stuff later. I will mark them as FIXMEs
+
 - Right now, environments grow if size == capacity(by 2 times) and shrink if
 size == [capacity / 2](gets halved). Only
   upon shrinking are the allocated backing arrays for hashtables freed. This

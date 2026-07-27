@@ -48,4 +48,5 @@ void printHashtable(Hash_Table *hashtable);
 void addScopeToEvmt(Environment *evmt);
 void removeScopeFromEvmt(Environment *evmt);
 int addObjectInScope(Environment *evmt, cstr *id, Object *obj);
+void *lookupHierarchical(Environment *evmt, cstr *buf);
 #endif
